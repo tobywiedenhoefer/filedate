@@ -4,6 +4,7 @@ from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
 from opsys import opsys
+from modfile import mod
 
 
 def par(s):
@@ -15,7 +16,7 @@ def par(s):
             if path:
                 break
             path = True
-        if path:
+        elif path:
             ns += i
 
     if len(ns) == 0:
@@ -82,33 +83,70 @@ class Apple:
         l.insert(0, "Do not modify")
         return l
 
+    def switch_months(self, m):
+        months = ["Jan", "Feb", "Mar", "Apr", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        for i, j in enumerate(months):
+            if j == m:
+                return i + 1
+        return 0
+
     def check_dates(self):
         lm = time.ctime(os.path.getmtime(self.master.fl)).split(' ')
         year = self.year.get()
         month = self.month.get()
-        day = self.month.get()
-        hour = self.month.get()
-        minute = self.month.get()
+        day = self.day.get()
         if (len(year) == 0) or (year == "Do not modify"):
             year = int(lm[-1])
         if (len(month) == 0) or (month == "Do not modify"):
-            month = lm[1]
-            if month == "Jan":
-                month = 1
-            elif month == "Feb":
-                month = 2
-            elif month == "Mar":
-                month = 3
-            elif month == "Apr":
-                month = 4
-            elif month == "May":
-                month = 5
+            if self.switch_months(lm[-1]):
+                month = int(self.switch_months(lm[1]))
+        if (len(day) == 0) or (day == "Do not modify"):
+            day = int(lm[2])
+
+        def validdate():
+            valid = True
+            try:
+                datetime(int(year), int(month), int(day))
+            except:
+                valid = False
+            return valid
+
+        return validdate
+
+    def conv_times(self):
+        lm = time.ctime(os.path.getmtime(self.master.fl)).split(' ')
+        year = self.year.get()
+        month = self.month.get()
+        day = self.day.get()
+        hour = self.day.get()
+        minute = self.day.get()
+        if (len(year) == 0) or (year == "Do not modify"):
+            year = int(lm[-1])
+        if (len(month) == 0) or (month == "Do not modify"):
+            if self.switch_months(lm[-1]):
+                month = int(self.switch_months(lm[1]))
+        if (len(day) == 0) or (day == "Do not modify"):
+            day = int(lm[2])
+        if (len(hour) == 0) or (day == "Do not modify"):
+            hm = lm[3].split(":")
+            hour = int(hm[0])
+        if (len(minute) == 0) or (day == "Do not modify"):
+            hm = lm[3].split(":")
+            minute = int(hm[2])
+        return int(year), int(month), int(day), int(hour), int(minute)
 
     def finalize(self):
         if not self.master.fl:
             self.label.config(text="Choose a valid file!")
-        # elif self.check_dates():
-        #     ...
+            proceed = False
+        elif not self.check_dates():
+            self.label.config(text="Choose a valid date!")
+            proceed = False
+        else:
+            y, mo, d, h, mi = self.conv_times()
+            mod(y, mo, d, h, mi, self.master.fl)
+            self.label.config(text="Modtime converted!")
+
 
 if opsys() == 0:
     root = Tk()
