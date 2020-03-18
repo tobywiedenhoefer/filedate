@@ -11,7 +11,7 @@ nh = int(now.hour)
 nmi = int(now.minute)
 
 
-class TestFileLocation(unittest.TestCase):
+class TestMain(unittest.TestCase):
     def test_par(self):
         # parse directory
         ideal_string = "/Users/somewhere/filedate/test.txt"
@@ -27,30 +27,19 @@ class TestFileLocation(unittest.TestCase):
         incorrect_list = ['Sun', 'Feb', '', '2', '02:02:00', '2020']
         self.assertEqual(ideal_list, rem_excess(incorrect_list))
 
-
-class TestDates(unittest.TestCase):
-    def test_check_date1(self):
+    def test_check_date(self):
         y, mo, d = 2020, 12, 31
-        self.assertEqual(check_dates(y, mo, d), True)
-
-    def test_check_date2(self):
+        self.assertTrue(check_dates(y, mo, d))
         y, mo, d = 2019, 2, 29
-        self.assertEqual(check_dates(y, mo, d), False)
+        self.assertFalse(check_dates(y, mo, d))
 
-    def test_too_far_ahead1(self):  # minutes too far ahead
-        self.assertEqual(too_far_ahead(ny, nmo, nd, nh, nmi + 1), True)
+    def test_too_far_ahead(self):
+        self.assertTrue(too_far_ahead(ny, nmo, nd, nh, nmi + 1))  # minutes
+        self.assertTrue(too_far_ahead(ny, nmo, nd, nh + 1, nmi))  # hours
+        self.assertTrue(too_far_ahead(ny, nmo, nd + 1, nh, nmi))  # days
+        self.assertTrue(too_far_ahead(ny, nmo + 1, nd, nh, nmi))  # months
+        self.assertFalse(too_far_ahead(1998, 12, 25, 12, 12))  # past date
 
-    def test_too_far_ahead2(self):  # hours too far ahead
-        self.assertEqual(too_far_ahead(ny, nmo, nd, nh + 1, nmi), True)
-
-    def test_too_far_ahead3(self):  # days too far ahead
-        self.assertEqual(too_far_ahead(ny, nmo, nd + 1, nh, nmi), True)
-
-    def test_too_far_ahead4(self):  # months too far ahead
-        self.assertEqual(too_far_ahead(ny, nmo + 1, nd, nh, nmi), True)
-
-    def test_too_far_ahead5(self):  # date in the past
-        self.assertEqual(too_far_ahead(1998, 12, 25, 12, 12), False)
 
 
 if __name__ == '__main__':

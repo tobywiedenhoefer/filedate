@@ -167,7 +167,8 @@ class Apple:
             self.label.config(text="Modified time converted!")
 
 
-if opsys() == 0:
-    root = Tk()
-    app = Apple(root)
-    root.mainloop()
+if __name__ == '__main__':  # for unit testing
+    if opsys() == 0:
+        root = Tk()
+        app = Apple(root)
+        root.mainloop()
