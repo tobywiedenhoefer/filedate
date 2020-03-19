@@ -1,17 +1,22 @@
 import unittest
+import time
+import os
 from datetime import datetime
 from tkinter import *
-from main import par, rem_excess, check_dates, too_far_ahead
-
-now = datetime.now()
-ny = int(now.year)
-nmo = int(now.month)
-nd = int(now.day)
-nh = int(now.hour)
-nmi = int(now.minute)
+from main import par, rem_excess, check_dates, too_far_ahead, switch_months
+from main import Apple
 
 
-class TestMain(unittest.TestCase):
+class TestStatic(unittest.TestCase):
+
+    def setUp(self):
+        self.now = datetime.now()
+        self.ny = int(self.now.year)
+        self.nmo = int(self.now.month)
+        self.nd = int(self.now.day)
+        self.nh = int(self.now.hour)
+        self.nmi = int(self.now.minute)
+
     def test_par(self):
         # parse directory
         ideal_string = "/Users/somewhere/filedate/test.txt"
@@ -34,12 +39,60 @@ class TestMain(unittest.TestCase):
         self.assertFalse(check_dates(y, mo, d))
 
     def test_too_far_ahead(self):
-        self.assertTrue(too_far_ahead(ny, nmo, nd, nh, nmi + 1))  # minutes
-        self.assertTrue(too_far_ahead(ny, nmo, nd, nh + 1, nmi))  # hours
-        self.assertTrue(too_far_ahead(ny, nmo, nd + 1, nh, nmi))  # days
-        self.assertTrue(too_far_ahead(ny, nmo + 1, nd, nh, nmi))  # months
+        self.assertTrue(too_far_ahead(self.ny, self.nmo, self.nd, self.nh, self.nmi + 1))  # minutes
+        self.assertTrue(too_far_ahead(self.ny, self.nmo, self.nd, self.nh + 1, self.nmi))  # hours
+        self.assertTrue(too_far_ahead(self.ny, self.nmo, self.nd + 1, self.nh, self.nmi))  # days
+        self.assertTrue(too_far_ahead(self.ny, self.nmo + 1, self.nd, self.nh, self.nmi))  # months
         self.assertFalse(too_far_ahead(1998, 12, 25, 12, 12))  # past date
 
+
+class TestApple(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        root = Tk()
+        cls.app = Apple(root)
+        with open("unittest.txt", "w+") as _:
+            cls.app.master.fl = "unittest.txt"
+        file_date = rem_excess(time.ctime(os.path.getmtime(cls.app.master.fl)).split(' '))
+        cls.expected_time = [int(file_date[-1]), switch_months(file_date[1]),
+                             int(file_date[2]), int(file_date[3].split(":")[0]), int(file_date[3].split(":")[1])]
+
+    @classmethod
+    def tearDownClass(cls):
+        os.remove("unittest.txt")
+
+    def test_conv_times(self):
+        # test 'do not modify'
+        y, mo, d, h, mi = self.app.conv_times("Do not modify", "Do not modify",
+                                              "Do not modify", "Do not modify", "Do not modify")
+        self.assertEqual(self.expected_time, [y, mo, d, h, mi])
+
+        # nothing selected, for whatever reason
+        y, mo, d, h, mi = self.app.conv_times("Select years", "Select months",
+                                              "Select days", "Select hours", "Select minutes")
+        self.assertEqual(self.expected_time, [y, mo, d, h, mi])
+
+    def test_finalize(self):
+        # testing whether the file was modified
+        self.app.finalize(self.app.conv_times(2020, 2, 20, 0, 0))
+        file_date = rem_excess(time.ctime(os.path.getmtime(self.app.master.fl)).split(' '))
+        file_date = [int(file_date[-1]), switch_months(file_date[1]), int(file_date[2]),
+                     int(file_date[3].split(":")[0]), int(file_date[3].split(":")[1])]
+        self.assertEqual(file_date, [2020, 2, 20, 0, 0])
+        self.assertEqual(self.app.label.cget("text"), "Modified time converted!")
+
+        # invalid date
+        self.app.finalize(self.app.conv_times(2019, 2, 29, 0, 0))
+        self.assertEqual(self.app.label.cget("text"), "Choose a valid date!")
+
+        # future date
+        self.app.finalize(self.app.conv_times(2020, 12, 31, 0, 0))
+        self.assertEqual(self.app.label.cget("text"), "Choose a non-future date!")
+
+        # invalid file
+        self.app.master.fl = None
+        self.app.finalize(self.app.conv_times(2020, 3, 19, 0, 0))
+        self.assertEqual(self.app.label.cget("text"), "Choose a valid file!")
 
 
 if __name__ == '__main__':

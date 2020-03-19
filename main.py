@@ -34,7 +34,7 @@ def cb(s, e):
 
 
 def switch_months(m):
-    months = ["Jan", "Feb", "Mar", "Apr", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
     for i, j in enumerate(months):
         if j == m:
             return i + 1
@@ -58,18 +58,21 @@ def too_far_ahead(y, mo, d, h, mi):
     nd = int(now.day)
     nh = int(now.hour)
     nmi = int(now.minute)
-    # self.year.get() set up such that year never greater than now.year
-    if (y == ny) and (mo == nmo) and (d == nd) and (h == nh) and (mi >= nmi):
-        return True
-    elif (y == ny) and (mo == nmo) and (d == nd) and ((h >= nh) or (mi >= nmi)):
-        return True
-    elif (y == ny) and (mo == nmo) and ((d >= nd) or (h >= nh) or (mi >= nmi)):
-        return True
-    elif (y == ny) and ((mo >= nmo) or (d >= nd) or (h >= nh) or (mi >= nmi)):
-        return True
-    # year cannot be greater than now.year by design.
-    else:
+
+    if y < ny:
         return False
+
+    # construct num of mo + d + h + mi in seconds
+    std_mi = 60
+    std_h = std_mi * 60
+    std_d = std_h * 24
+    std_mo = std_d * 29  # just estimation
+    now_seconds = (nmo * std_mo) + (nd * std_d) + (nh * std_h) + (nmi * std_mi)
+    entered_seconds = (mo * std_mo) + (d * std_d) + (h * std_h) + (mi * std_mi)
+    diff = now_seconds - entered_seconds
+    if diff >= 0:  # it is ok, although odd, to update the time modified to now.
+        return False
+    return True
 
 
 def check_dates(y, mo, d):  # returns whether a date is possible
@@ -83,6 +86,10 @@ def check_dates(y, mo, d):  # returns whether a date is possible
 
 class Apple:
     def __init__(self, master):
+        master.title('Modify File Date')
+        master.resizable(False, False)
+        master.geometry("250x250")
+
         self.master = master
         self.master.fl = None
         self.label = ttk.Label(master, text="Welcome")
@@ -125,38 +132,38 @@ class Apple:
         minute_box.set("Select minutes")
 
         # final button
-        final = ttk.Button(master, text="Change File", command=self.finalize)
+        final = ttk.Button(master, text="Change File", command=lambda: self.finalize(
+            self.conv_times(self.year.get(), self.month.get(), self.day.get(), self.hour.get(), self.minute.get())))
         final.grid(row=8, column=0)
 
     def cf(self):  # choose file
-        sel_str = str(filedialog.askopenfile(parent=self.master, title='Select a File to Modify'))
-
         # sel_str -> '/Users/...'
-        if sel_str != -1:
-            self.master.fl = par(sel_str)
+        sel_str = str(filedialog.askopenfile(parent=self.master, title='Select a File to Modify'))
+        self.master.fl = par(sel_str)
 
     def conv_times(self, y, mo, d, h, mi):
         # return's a file's last modified times
+        if self.master.fl is None:
+            return 0, 0, 0, 0, 0
         lm = rem_excess(time.ctime(os.path.getmtime(self.master.fl)).split(' '))
 
-        if (len(y) == 0) or (y == "Do not modify") or (y == "Select years"):
+        if (y == "Do not modify") or (y == "Select years"):
             y = int(lm[-1])
-        if (len(mo) == 0) or (mo == "Do not modify") or (mo == "Select months"):
+        if (mo == "Do not modify") or (mo == "Select months"):
             mo = int(switch_months(lm[1]))
-        if (len(d) == 0) or (d == "Do not modify") or (d == "Select days"):
+        if (d == "Do not modify") or (d == "Select days"):
             d = int(lm[2])
-        if (len(h) == 0) or (h == "Do not modify") or (h == "Select hours"):
+        if (h == "Do not modify") or (h == "Select hours"):
             hm = lm[3].split(":")
             h = int(hm[0])
-        if (len(mi) == 0) or (mi == "Do not modify") or (mi == "Select minutes"):
+        if (mi == "Do not modify") or (mi == "Select minutes"):
             hm = lm[3].split(":")
-            mi = int(hm[0])
+            mi = int(hm[1])
         return int(y), int(mo), int(d), int(h), int(mi)
 
-    def finalize(self):
-        y, mo, d, h, mi = self.conv_times(self.year.get(), self.month.get(),
-                                          self.day.get(), self.hour.get(), self.minute.get())
-        if not self.master.fl:
+    def finalize(self, conv_times):
+        y, mo, d, h, mi = conv_times
+        if self.master.fl is None:
             self.label.config(text="Choose a valid file!")
         elif not check_dates(y, mo, d):
             self.label.config(text="Choose a valid date!")
