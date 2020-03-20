@@ -88,15 +88,14 @@ class Apple:
     def __init__(self, master):
         master.title('Modify File Date')
         master.resizable(False, False)
-        master.geometry("250x250")
 
         self.master = master
         self.master.fl = None
         self.label = ttk.Label(master, text="Welcome")
-        self.label.grid(row=0, column=0, columnspan=2)
+        self.label.pack()
 
         # collects route
-        ttk.Button(master, text="Choose a File", command=self.cf).grid(row=1, column=0)
+        ttk.Button(master, text="Choose a File", command=self.cf).pack()
 
         now = datetime.now()
         # time variables
@@ -107,34 +106,34 @@ class Apple:
         self.minute = StringVar()
 
         # years
-        year_box = ttk.Combobox(master, textvariable=self.year, values=cb(now.year, 1998))
-        year_box.grid(row=2, column=0)
+        year_box = ttk.Combobox(master, textvariable=self.year, values=cb(now.year, 1997))
         year_box.set("Select years")
+        year_box.pack()
 
         # months
         month_box = ttk.Combobox(master, textvariable=self.month, values=cb(12, 0))
-        month_box.grid(row=3, column=0)
         month_box.set("Select months")
+        month_box.pack()
 
         # days
         day_box = ttk.Combobox(master, textvariable=self.day, values=cb(31, 0))
-        day_box.grid(row=4, column=0)
         day_box.set("Select days")
+        day_box.pack()
 
         # hours
         hour_box = ttk.Combobox(master, textvariable=self.hour, values=cb(23, -1))
-        hour_box.grid(row=5, column=0)
+        hour_box.pack()
         hour_box.set("Select hours")
 
         # minutes
         minute_box = ttk.Combobox(master, textvariable=self.minute, values=cb(59, -1))
-        minute_box.grid(row=6, column=0)
+        minute_box.pack()
         minute_box.set("Select minutes")
 
         # final button
         final = ttk.Button(master, text="Change File", command=lambda: self.finalize(
             self.conv_times(self.year.get(), self.month.get(), self.day.get(), self.hour.get(), self.minute.get())))
-        final.grid(row=8, column=0)
+        final.pack()
 
     def cf(self):  # choose file
         # sel_str -> '/Users/...'
